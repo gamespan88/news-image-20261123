@@ -140,8 +140,14 @@ def masthead(draw, doy):
 
 # --- hero ------------------------------------------------------------------
 
-def hero_art(draw, x, y):
-    """Fractured globe above a conference table; a gavel has fallen."""
+def hero_art(img, draw, x, y):
+    """Fractured globe above a conference table of delegates."""
+    # bunting: a string of small flags across the top of the scene
+    draw.line([x + 6, y + 1, x + 294, y + 1], fill=MUTED, width=1)
+    for fx, colour in [(x + 22, NAVY), (x + 50, RED),
+                       (x + 236, TEAL), (x + 264, GOLD)]:
+        draw.polygon([(fx, y + 1), (fx + 14, y + 1), (fx + 7, y + 12)],
+                     fill=colour)
     cx, cy, r = x + 150, y + 48, 44
     # globe with meridians and a parallel
     draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=INK, width=3)
@@ -158,6 +164,12 @@ def hero_art(draw, x, y):
     draw.rectangle([x + 52, y + 62, x + 70, y + 74], fill=NAVY)
     draw.line([x + 248, y + 62, x + 248, y + 98], fill=INK, width=2)
     draw.rectangle([x + 230, y + 62, x + 248, y + 74], fill=RED)
+    # delegates seated behind the table: heads and shoulders, muted ink
+    for i in range(7):
+        dx = x + 48 + i * 34
+        draw.ellipse([dx - 6, y + 92, dx + 6, y + 104], fill=MUTED)
+        draw.polygon([(dx - 12, y + 111), (dx - 8, y + 102),
+                      (dx + 8, y + 102), (dx + 12, y + 111)], fill=MUTED)
     # name plates along the table edge
     for i in range(5):
         px = x + 66 + i * 42
@@ -166,11 +178,28 @@ def hero_art(draw, x, y):
     draw.polygon([(x + 30, y + 108), (x + 270, y + 108),
                   (x + 248, y + 130), (x + 52, y + 130)],
                  fill=PAPER_DARK, outline=INK)
+    # loose paper sheets scattered on the table surface
+    for px, py in [(x + 72, y + 113), (x + 128, y + 118),
+                   (x + 156, y + 111)]:
+        draw.polygon([(px, py), (px + 17, py + 2), (px + 16, py + 9),
+                      (px - 1, py + 7)], fill=WHITE, outline=MUTED)
     # fallen gavel: handle, head, and the block it slipped off
     draw.line([x + 196, y + 122, x + 230, y + 112], fill=INK, width=4)
     draw.polygon([(x + 226, y + 102), (x + 242, y + 107),
                   (x + 238, y + 118), (x + 222, y + 113)], fill=INK)
     draw.rectangle([x + 172, y + 125, x + 198, y + 131], outline=INK, width=2)
+    # a red NO DEAL stamp slammed over the scene by the clerk
+    f_stamp = font(SANS_BOLD, 14)
+    label = "NO DEAL"
+    sw = int(tw(draw, label, f_stamp)) + 20
+    stamp = Image.new("RGBA", (sw, 30), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(stamp)
+    sd.rectangle([1, 1, sw - 2, 28], outline=RED + (255,), width=3)
+    sd.text(((sw - tw(draw, label, f_stamp)) / 2, 7), label,
+            font=f_stamp, fill=RED + (255,))
+    stamp = stamp.rotate(-12, expand=True, resample=Image.BICUBIC)
+    img.paste(stamp, (x + 215 - stamp.width // 2,
+                      y + 107 - stamp.height // 2), stamp)
 
 
 HERO_SUMMARY = (
@@ -191,7 +220,7 @@ LEGEND = [
 ]
 
 
-def hero(draw, y):
+def hero(img, draw, y):
     draw.rounded_rectangle([MARGIN, y, RIGHT, y + 246], radius=8,
                            fill=CARD_BG, outline=CARD_EDGE)
     # kicker band in navy, with the certainty chip on the right
@@ -211,7 +240,7 @@ def hero(draw, y):
     # summary on the left, illustration on the right
     text_block(draw, MARGIN + 14, y + 88, HERO_SUMMARY,
                font(SERIF, 15), INK, 632, 20)
-    hero_art(draw, RIGHT - 314, y + 86)
+    hero_art(img, draw, RIGHT - 314, y + 86)
 
     # certainty legend along the bottom of the hero
     lx = MARGIN + 14
@@ -308,11 +337,11 @@ CARDS_R1 = [
     dict(badge="UKRAINE", colour=(38, 84, 124), chip=("REPORTED", GOLD_LIGHT, INK),
          icon="skyline", headline="KYIV UNDER FIRE AGAIN",
          text="Russian strikes kill at least 15 people around the capital; "
-              "a boy is pulled alive from the rubble."),
+              "a boy is pulled alive from the rubble in Dymer."),
     dict(badge="INDONESIA", colour=(166, 84, 20), chip=None,
          icon="flame", headline="FACTORY FIRE KILLS 24 IN INDONESIA",
-         text="A blaze at a sweets factory kills 24 people, and about 30 "
-              "people are still missing."),
+         text="A confectionery plant in Cikande, Banten, burned on "
+              "Saturday evening: 24 dead, about 30 still missing."),
 ]
 
 CARDS_R2 = [
@@ -330,7 +359,9 @@ CARDS_R2 = [
     dict(badge="SPACE", colour=NAVY, chip=None,
          icon="mercury", headline="MERCURY, AT LAST",
          text="BepiColombo enters orbit around Mercury after an eight-year "
-              "journey."),
+              "journey — only the second craft ever to orbit it, after NASA's "
+              "Messenger. ESA–JAXA will study its surface and magnetic "
+              "field."),
 ]
 
 
@@ -399,7 +430,7 @@ BRIEFS = [
     "A major equal-pay tribunal involving Asda workers opens in the UK.",
     "A second-home sell-off costs UK councils £48m in lost council tax.",
     "Trump's Thanksgiving turkeys reach a Washington hotel; "
-    "Americans vote on their names.",
+    "the public votes on names.",
 ]
 
 
@@ -469,7 +500,7 @@ def main():
     day = datetime.date(2026, 11, 23)
     doy = day.timetuple().tm_yday
     masthead(draw, doy)
-    hero(draw, 186)
+    hero(img, draw, 186)
     cards(draw)
     briefs(draw, 714)
     date_check(draw, 968, doy)
